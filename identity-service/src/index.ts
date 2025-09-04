@@ -71,7 +71,7 @@ const sensitiveRoutesRateLimiter = rateLimit({
   }),
 });
 
-app.use('/health', (req, res) =>
+app.get('/health', (req, res) =>
   res.status(200).json({
     success: true,
     status: 'OK',

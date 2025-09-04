@@ -6,3 +6,8 @@ dist
 .DS_Store
 npm-debug.log*
 
+
+# logs
+combined.log
+debug.log
+error.log
