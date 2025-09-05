@@ -1,7 +1,15 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 import argon2 from 'argon2';
+interface IUser extends Document {
+  username: string;
+  email: string;
+  password: string;
+  created_at: Date;
+  updated_at: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
+}
 
-const userSchema = new mongoose.Schema(
+const userSchema = new Schema<IUser>(
   {
     username: { type: String, required: true, unique: true, trim: true },
     email: {
@@ -32,11 +40,12 @@ userSchema.pre('save', async function (next) {
       return next(error);
     }
   }
+  next();
 });
 
 userSchema.methods.comparePassword = async function (
   candidatePassword: string
-) {
+): Promise<boolean> {
   try {
     return await argon2.verify(this.password, candidatePassword);
   } catch (error: any) {
@@ -44,5 +53,7 @@ userSchema.methods.comparePassword = async function (
   }
 };
 
-const User = mongoose.model('user', userSchema);
+interface UserModel extends Model<IUser> {}
+
+const User = mongoose.model<IUser, UserModel>('User', userSchema);
 export default User;
