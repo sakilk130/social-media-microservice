@@ -20,7 +20,7 @@ const createPost = async (req: any, res: Response) => {
     const newPost = new Post({
       user: req.user.userId,
       content,
-      mediaIds: media_ids,
+      media_ids,
     });
     await newPost.save();
     logger.info('Post created with ID: %s', newPost._id);

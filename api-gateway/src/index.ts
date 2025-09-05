@@ -8,6 +8,7 @@ import { RedisStore, SendCommandFn } from 'rate-limit-redis';
 import proxy from 'express-http-proxy';
 import logger from './utils/logger';
 import errorHandler from './middleware/error-handler';
+import validateToken from './middleware/auth';
 
 dotenv.config();
 
@@ -86,12 +87,32 @@ app.use(
   })
 );
 
+app.use(
+  '/v1/posts',
+  validateToken,
+  proxy(process.env.POST_SERVICE as string, {
+    ...proxyOptions,
+    proxyReqOptDecorator: (proxyReqOpts, srcReq: any) => {
+      proxyReqOpts.headers['Content-Type'] = 'application/json';
+      proxyReqOpts.headers['x-user-id'] = srcReq.user.user_id;
+      return proxyReqOpts;
+    },
+    userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+      logger.info(
+        `Response received from Post service: ${proxyRes.statusCode}`
+      );
+      return proxyResData;
+    },
+  })
+);
+
 app.use(errorHandler);
 
 app.listen(PORT, () => {
   logger.info(`API Gateway is running on port ${PORT}`);
   logger.info(
-    `Identity service is running on port ${process.env.IDENTITY_SERVICE_URL}`
+    `Identity service is running on port ${process.env.IDENTITY_SERVICE}`
   );
+  logger.info(`Post service is running on port ${process.env.POST_SERVICE}`);
   logger.info(`Redis Url ${process.env.REDIS_URL}`);
 });
