@@ -4,7 +4,6 @@ import { validateLogin, validateRegistration } from '../utils/validation';
 import User from '../models/user';
 import generateTokens from '../utils/generate-token';
 import RefreshToken from '../models/refresh-token';
-import { ref } from 'process';
 
 const registerUser = async (req: Request, res: Response) => {
   logger.info('Registering user');
@@ -157,4 +156,36 @@ const refreshTokenUser = async (req: Request, res: Response) => {
   }
 };
 
-export { registerUser, loginUser, refreshTokenUser };
+const logout = async (req: Request, res: Response) => {
+  logger.info('Logging out user');
+  try {
+    const { refresh_token } = req.body;
+    if (!refresh_token) {
+      logger.warn('Refresh token not provided');
+      return res
+        .status(400)
+        .json({ success: false, message: 'Refresh token is required' });
+    }
+
+    const foundToken = await RefreshToken.findOne({ token: refresh_token });
+    if (!foundToken) {
+      logger.warn('Invalid refresh token provided');
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid refresh token',
+      });
+    }
+
+    await RefreshToken.deleteOne({ _id: foundToken._id });
+    logger.info('User logged out successfully');
+    res.status(200).json({
+      success: true,
+      message: 'User logged out successfully!',
+    });
+  } catch (error) {
+    logger.error('Error logging out user: %o', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export { registerUser, loginUser, refreshTokenUser, logout };
