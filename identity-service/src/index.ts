@@ -16,11 +16,17 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 const redisClient = new Redis(process.env.REDIS_URL as string);
+const mongoUri = process.env.MONGODB_URI;
 
 redisClient.on('error', (err) => console.error('Redis Client Error', err));
 
+if (!mongoUri) {
+  logger.error('MONGODB_URI is not defined in environment variables');
+  process.exit(1);
+}
+
 mongoose
-  .connect(process.env.MONGODB_URI as string)
+  .connect(mongoUri)
   .then(() => logger.info('Connected to mongodb'))
   .catch((e) => logger.error('Mongo connection error', e));
 
