@@ -8,6 +8,7 @@ import { RateLimiterRedis } from 'rate-limiter-flexible';
 import logger from './utils/logger';
 import router from './routes/post.route';
 import errorHandler from './middlewares/error-handler';
+import { connectToRabbitMQ } from './utils/rabbitmq';
 
 dotenv.config();
 
@@ -69,9 +70,19 @@ app.use(
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  logger.info(`Post service running on port ${PORT}`);
-});
+const start = async () => {
+  try {
+    await connectToRabbitMQ();
+    app.listen(PORT, () => {
+      logger.info(`Post service running on port ${PORT}`);
+    });
+  } catch (error) {
+    logger.error('Failed to start server: %o', error);
+    process.exit(1);
+  }
+};
+
+start();
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);

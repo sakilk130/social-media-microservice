@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import logger from '../utils/logger';
 import { validateCreatePost } from '../utils/validation';
 import Post from '../models/post';
+import { publishEvent } from '../utils/rabbitmq';
 
 const invalidatePostsCache = async (req: any, input: any) => {
   const cachedKey = `post:${input}`;
@@ -171,6 +172,12 @@ const deletePost = async (req: any, res: Response) => {
     await Post.findByIdAndDelete(postId).exec();
     await invalidatePostsCache(req, postId);
     logger.info('Post deleted with ID: %s', postId);
+
+    await publishEvent('post.deleted', {
+      post_id: postId,
+      user_id: userId,
+      media_ids: post.media_ids || [],
+    });
     res.status(200).json({
       success: true,
       message: 'Post deleted successfully',
